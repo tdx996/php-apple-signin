@@ -17,6 +17,8 @@ use Exception;
  * @link     https://github.com/GriffinLedingham/php-apple-signin
  */
 class ASDecoder {
+    const PUBLIC_KEYS_ENDPOINT = 'https://appleid.apple.com/auth/keys';
+
     /**
      * Parse a provided Sign In with Apple identity token.
      *
@@ -56,7 +58,7 @@ class ASDecoder {
      * @return array
      */
     public static function fetchPublicKey(string $publicKeyKid) : array {
-        $publicKeys = file_get_contents('https://appleid.apple.com/auth/keys');
+        $publicKeys = Http::get(self::PUBLIC_KEYS_ENDPOINT);
         $decodedPublicKeys = json_decode($publicKeys, true);
 
         if(!isset($decodedPublicKeys['keys']) || count($decodedPublicKeys['keys']) < 1) {
@@ -115,5 +117,18 @@ class ASPayload {
 
     public function verifyUser(string $user) : bool {
         return $user === $this->getUser();
+    }
+}
+
+class Http {
+    public static function get($url): ?string {
+        $curl = curl_init();
+        curl_setopt($curl, CURLOPT_URL, $url);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HEADER, false);
+        $data = curl_exec($curl);
+        curl_close($curl);
+
+        return $data;
     }
 }
